@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "expo-start",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--port", "8088"],
+      "port": 8088
+    },
+    {
+      "name": "expo-web",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web", "--port", "8089"],
+      "port": 8089
+    },
+    {
+      "name": "expo-android",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--android", "--port", "8090"],
+      "port": 8090
+    },
+    {
+      "name": "expo-ios",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--ios", "--port", "8091"],
+      "port": 8091
+    }
+  ]
+}

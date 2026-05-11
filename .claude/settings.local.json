@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo *)",
+      "Bash(not exist *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node --input-type=module)",
+      "Bash(node -e \"require\\('./src/screens/RoomScreen.js'\\)\")",
+      "Bash(npx --yes acorn --ecma2020 --module src/screens/RoomScreen.js)",
+      "Bash(node -e ' *)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(npx kill-port *)",
+      "Bash(ipconfig)",
+      "Bash(npm install *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm show *)",
+      "Read(//mnt/c/Users/gdems/**)",
+      "Read(//mnt/c/Users/gdems/AppData/Local/Temp/claude/C--Users-gdems-Rooms/6ef30d14-1653-49b3-ad2c-909ca6370539/tasks/**)"
+    ]
+  }
+}
