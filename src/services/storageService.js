@@ -1,5 +1,5 @@
 import { assertSupabaseConfigured, supabase } from './supabaseClient';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const BUCKETS = {
   avatars: 'avatars',

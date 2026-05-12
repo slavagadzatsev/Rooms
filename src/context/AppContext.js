@@ -384,6 +384,8 @@ export function AppProvider({ children }) {
   useEffect(() => { roomsRef.current = rooms; }, [rooms]);
   const backendUserIdRef = useRef(null);
   useEffect(() => { backendUserIdRef.current = backendUserId; }, [backendUserId]);
+  // Track rooms deleted by the user so they don't reappear during remote fetches
+  const deletedRoomIdsRef = useRef(new Set());
   const [localNotifications, setLocalNotifications] = useState([]);
   const [notificationPrefs, setNotificationPrefs] = useState(DEFAULT_NOTIFICATION_PREFS);
   const [premiumSettings, setPremiumSettings] = useState(DEFAULT_PREMIUM_SETTINGS);
@@ -637,11 +639,14 @@ export function AppProvider({ children }) {
         });
         // When logged in, always use real data — even if empty (don't show mock rooms)
         if (!cancelled) {
-          setRooms(prev => remoteRooms.map(remoteRoom =>
-            withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
-              room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
-            )))
-          ));
+          setRooms(prev => remoteRooms
+            .filter(remoteRoom => !deletedRoomIdsRef.current.has(remoteRoom.backendRoomId))
+            .map(remoteRoom =>
+              withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
+                room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
+              )))
+            )
+          );
         }
       } catch {}
     })();
@@ -698,11 +703,14 @@ export function AppProvider({ children }) {
       lastForegroundRefetchRef.current = now;
       fetchRemoteRooms({ profileInterests: profileTagsRef.current, userId, limit: 50 })
         .then(remoteRooms => {
-          setRooms(prev => remoteRooms.map(remoteRoom =>
-            withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
-              room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
-            )))
-          ));
+          setRooms(prev => remoteRooms
+            .filter(remoteRoom => !deletedRoomIdsRef.current.has(remoteRoom.backendRoomId))
+            .map(remoteRoom =>
+              withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
+                room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
+              )))
+            )
+          );
         })
         .catch(() => {});
       fetchFollowedUsers(userId)
@@ -1310,12 +1318,11 @@ export function AppProvider({ children }) {
   };
 
   const deleteRoom = (roomId) => {
+    const backendRoomId = getBackendRoomId(rooms, roomId);
+    if (backendRoomId) deletedRoomIdsRef.current.add(backendRoomId);
     setRooms(prev => prev.filter(r => r.id !== roomId));
-    if (backendUserId && getSupabaseStatus().configured) {
-      const backendRoomId = getBackendRoomId(rooms, roomId);
-      if (backendRoomId) {
-        deleteRemoteRoom(backendRoomId, backendUserId).catch(() => {});
-      }
+    if (backendUserId && getSupabaseStatus().configured && backendRoomId) {
+      deleteRemoteRoom(backendRoomId, backendUserId).catch(() => {});
     }
   };
 
