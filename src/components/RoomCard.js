@@ -97,7 +97,7 @@ export default function RoomCard({ room, onPress, onLongPress, mode = 'feed' }) 
           <View style={[styles.listIcon, { backgroundColor: iconBgColor }]}>
             <RoomVisual room={room} size="small" />
           </View>
-          {room.online > 0 && <View style={[styles.activeDot, { borderColor: palette.glass.bg }]} />}
+          {room.online > 0 && <View style={[styles.activeDot, { borderColor: isDark ? '#0d0b1a' : '#f0eeff' }]} />}
         </View>
         <View style={styles.listBody}>
           <View style={styles.topRow}>
