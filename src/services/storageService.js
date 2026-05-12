@@ -86,7 +86,10 @@ async function uploadLocalUri(bucket, path, uri, contentType, { upsert = false }
 export async function uploadAvatar(userId, uri) {
   if (!uri || isRemoteUrl(uri)) return uri || null;
   const ext = getExtension(uri);
-  return uploadLocalUri(BUCKETS.avatars, `${userId}/avatar.${ext}`, uri, getMimeType(ext), { upsert: true });
+  const publicUrl = await uploadLocalUri(BUCKETS.avatars, `${userId}/avatar.${ext}`, uri, getMimeType(ext), { upsert: true });
+  // Bust CDN cache so the new photo shows immediately (same path is reused per user)
+  if (!publicUrl || publicUrl.startsWith('data:')) return publicUrl;
+  return `${publicUrl.split('?')[0]}?t=${Date.now()}`;
 }
 
 export async function uploadRoomImage(userId, uri) {

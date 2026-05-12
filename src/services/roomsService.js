@@ -284,13 +284,21 @@ export async function inviteUserToRoom(roomId, targetUserId, role = 'Member') {
   if (!activeUserId) throw new Error('A user id is required to invite.');
   await assertUserCanParticipate(activeUserId);
   const safeRole = String(role || 'Member').toLowerCase() === 'creator' ? 'Member' : role || 'Member';
+  // Don't downgrade an already-active membership
+  const { data: existing } = await supabase
+    .from('room_members')
+    .select('status')
+    .eq('room_id', roomId)
+    .eq('user_id', targetUserId)
+    .maybeSingle();
+  if (existing?.status === 'active') return { roomId, userId: targetUserId, role: safeRole, alreadyMember: true };
   const { error } = await supabase
     .from('room_members')
     .upsert({
       room_id: roomId,
       user_id: targetUserId,
       role: safeRole,
-      status: 'active',
+      status: 'invited',
       left_at: null,
     });
   if (error) throw error;

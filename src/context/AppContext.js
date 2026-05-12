@@ -1667,6 +1667,17 @@ export function AppProvider({ children }) {
         ...prev,
         [roomId]: mergedMessages,
       }));
+      const lastMessage = mergedMessages[mergedMessages.length - 1];
+      if (lastMessage) {
+        const senderLabel = lastMessage.mine ? 'Me' : (lastMessage.sender || 'Member');
+        const bodyLabel = lastMessage.attachment
+          ? (lastMessage.attachment.label || 'Attachment')
+          : (lastMessage.text || '...');
+        setRooms(prev => prev.map(r => {
+          if (r.id !== roomId && r.backendRoomId !== backendRoomId) return r;
+          return { ...r, lastMsg: `${senderLabel}: ${bodyLabel}`, time: lastMessage.time };
+        }));
+      }
       return mergedMessages;
     } catch (error) {
       console.warn('loadRoomMessages failed', {

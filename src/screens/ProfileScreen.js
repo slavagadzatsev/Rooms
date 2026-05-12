@@ -502,7 +502,10 @@ export default function ProfileScreen({ navigation }) {
                       }}
                     >
                       <View style={[styles.connectionAv, { backgroundColor: person.color }]}>
-                        <Text style={[styles.connectionAvText, { color: person.textColor }]}>{person.name.slice(0, 2).toUpperCase()}</Text>
+                        {person.avatarUri
+                          ? <Image source={{ uri: person.avatarUri }} style={styles.connectionAvImage} />
+                          : <Text style={[styles.connectionAvText, { color: person.textColor }]}>{person.name.slice(0, 2).toUpperCase()}</Text>
+                        }
                       </View>
                       <View style={styles.connectionInfo}>
                         <Text style={[styles.connectionName, { color: palette.text }]}>{person.name}</Text>
@@ -1149,7 +1152,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 8,
   },
-  connectionAv: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  connectionAv: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  connectionAvImage: { width: 38, height: 38, borderRadius: 19 },
   connectionAvText: { fontSize: 12, fontWeight: '800' },
   connectionInfo: { flex: 1 },
   connectionName: { fontSize: 13, fontWeight: '800', marginBottom: 2 },
