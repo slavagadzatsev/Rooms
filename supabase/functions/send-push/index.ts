@@ -93,9 +93,8 @@ async function createInAppNotifications(
   supabase: ReturnType<typeof createClient>,
   rows: InAppNotificationRow[]
 ) {
-  if (rows.length === 0) return;
-  await supabase.from('notifications').upsert(
-    rows.map(row => ({
+  for (const row of rows) {
+    const { error } = await supabase.from('notifications').insert({
       user_id: row.user_id,
       room_id: row.room_id ?? null,
       actor_id: row.actor_id ?? null,
@@ -103,9 +102,12 @@ async function createInAppNotifications(
       dedupe_key: row.dedupe_key ?? null,
       title: row.title,
       body: row.body ?? '',
-    })),
-    { onConflict: 'user_id,dedupe_key', ignoreDuplicates: true }
-  );
+    });
+    // 23505 = unique_violation (duplicate dedupe_key) — expected, ignore it
+    if (error && error.code !== '23505') {
+      console.error('notification insert error:', row.event_type, error.message);
+    }
+  }
 }
 
 function extractMentionedNames(text: string): string[] {

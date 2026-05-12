@@ -309,6 +309,10 @@ function mergeRoomLocalState(remoteRoom, localRoom) {
     checkedInToday: localRoom.checkedInToday ?? remoteRoom.checkedInToday,
     activeToday: Math.max(remoteRoom.activeToday ?? 0, localRoom.activeToday ?? 0),
     isSaved: localRoom.isSaved ?? remoteRoom.isSaved,
+    // Preserve locally-known message state so room list doesn't flash "No messages yet"
+    lastMsg: localRoom.lastMsg && localRoom.lastMsg !== 'No messages yet' ? localRoom.lastMsg : remoteRoom.lastMsg,
+    time: localRoom.time && localRoom.time !== 'Recently' ? localRoom.time : remoteRoom.time,
+    unread: localRoom.unread ?? remoteRoom.unread,
   };
 }
 
@@ -1318,7 +1322,7 @@ export function AppProvider({ children }) {
   };
 
   const deleteRoom = (roomId) => {
-    const backendRoomId = getBackendRoomId(rooms, roomId);
+    const backendRoomId = getBackendRoomId(roomsRef.current, roomId);
     if (backendRoomId) deletedRoomIdsRef.current.add(backendRoomId);
     setRooms(prev => prev.filter(r => r.id !== roomId));
     if (backendUserId && getSupabaseStatus().configured && backendRoomId) {
@@ -1716,8 +1720,9 @@ export function AppProvider({ children }) {
   const loadRoom = async (roomId) => {
     if (!backendUserId || !getSupabaseStatus().configured) return null;
     try {
-      const backendRoomId = getBackendRoomId(rooms, roomId);
+      const backendRoomId = getBackendRoomId(roomsRef.current, roomId);
       if (!backendRoomId) return null;
+      if (deletedRoomIdsRef.current.has(backendRoomId)) return null;
       const remoteRoom = await fetchRemoteRoom(backendRoomId, backendUserId);
       if (!remoteRoom) return null;
       const existingRoom = rooms.find(room => room.id === roomId || room.backendRoomId === backendRoomId);
@@ -1774,11 +1779,14 @@ export function AppProvider({ children }) {
         userId: backendUserId,
         limit: 50,
       });
-      setRooms(prev => remoteRooms.map(remoteRoom =>
-        withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
-          room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
-        )))
-      ));
+      setRooms(prev => remoteRooms
+        .filter(remoteRoom => !deletedRoomIdsRef.current.has(remoteRoom.backendRoomId))
+        .map(remoteRoom =>
+          withPulseDefaults(mergeRoomLocalState(remoteRoom, prev.find(room =>
+            room.id === remoteRoom.id || room.backendRoomId === remoteRoom.backendRoomId
+          )))
+        )
+      );
     } catch {}
   };
 
