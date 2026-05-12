@@ -54,6 +54,25 @@ function getRoleColor(room, role, fallbackIndex = 0) {
   return room?.roleColors?.[role] || ROLE_COLOR_PALETTE[fallbackIndex % ROLE_COLOR_PALETTE.length];
 }
 
+// Split message text into plain segments and @mention segments for styled rendering
+function parseMentionSegments(text = '') {
+  const segments = [];
+  const regex = /@\S+/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', value: text.slice(lastIndex, match.index) });
+    }
+    segments.push({ type: 'mention', value: match[0] });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    segments.push({ type: 'text', value: text.slice(lastIndex) });
+  }
+  return segments;
+}
+
 function parseReactionSummary(summary = '') {
   const parts = String(summary || '').trim().split(/\s+/).filter(Boolean);
   const reactions = [];
@@ -959,8 +978,21 @@ export default function RoomScreen({ navigation, route }) {
                 </TouchableOpacity>
               )}
               {!!item.text && (
-                <Text style={[styles.bubbleText, item.mine && { color: colors.white }, !item.mine && { color: palette.text }]}>
-                  {item.text}
+                <Text style={[styles.bubbleText, item.mine ? { color: colors.white } : { color: palette.text }]}>
+                  {parseMentionSegments(item.text).map((seg, i) => {
+                    if (seg.type !== 'mention') return <Text key={i}>{seg.value}</Text>;
+                    const mentionName = seg.value.slice(1).toLowerCase();
+                    const mentionMember = members.find(m => (m.name || '').toLowerCase() === mentionName);
+                    return (
+                      <Text
+                        key={i}
+                        style={item.mine ? styles.mentionMine : styles.mentionOther}
+                        onPress={() => mentionMember && setSelectedMember(mentionMember)}
+                      >
+                        {seg.value}
+                      </Text>
+                    );
+                  })}
                 </Text>
               )}
               <View style={[styles.bubbleMeta, item.mine && styles.bubbleMetaMe]}>
@@ -2529,6 +2561,8 @@ const styles = StyleSheet.create({
   messageImageWrap: { marginBottom: 7, borderRadius: 16, overflow: 'hidden' },
   messageImage: { borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.08)' },
   bubbleText:  { fontSize: 15, lineHeight: 20 },
+  mentionMine:  { fontWeight: '700', color: '#c4ff9e' },
+  mentionOther: { fontWeight: '700', color: '#7C5CFC' },
   bubbleMeta: {
     flexDirection: 'row',
     alignItems: 'center',
