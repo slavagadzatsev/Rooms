@@ -49,7 +49,7 @@ function base64ToArrayBuffer(base64) {
 
 async function readLocalUriAsBase64(uri) {
   return FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
+    encoding: 'base64',
   });
 }
 

@@ -203,7 +203,7 @@ export default function RoomScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
   const {
     rooms, roomMessages, sendMessage, loadRoomMessages, subscribeRoomMessages, loadRoom, subscribeRoomUpdates, reactToMessage, deleteMessage,
-    updateMessageStatus, retryMessage, checkIn, pulseRoom, clearUnread, leaveRoom, profile, followedUserIds, blockedUserIds,
+    updateMessageStatus, retryMessage, checkIn, pulseRoom, clearUnread, leaveRoom, deleteRoom, profile, followedUserIds, blockedUserIds,
     toggleFollowMember, blockMember, unblockMember, kickMemberFromRoom, reportContent, chooseMyRoomRole, addRoomRole, updateRoomRoleColor, inviteConnectionToRoom,
     joinRoom, ensureRoomAvailable, themeMode, profileTags, connections,
   } = useApp();
@@ -223,6 +223,7 @@ export default function RoomScreen({ navigation, route }) {
   const [replyTo,       setReplyTo]       = useState(null);
   const [liveOnline,    setLiveOnline]    = useState(0);
   const [confirmLeave,  setConfirmLeave]  = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [inviteVisible, setInviteVisible] = useState(false);
   const [invitingId, setInvitingId] = useState(null);
@@ -1897,7 +1898,31 @@ export default function RoomScreen({ navigation, route }) {
               </TouchableOpacity>
             )}
 
-            {confirmLeave ? (
+            {confirmDelete ? (
+              <View style={[styles.confirmLeaveBox, { backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : '#fff0f0', borderColor: 'rgba(239,68,68,0.3)' }]}>
+                <Text style={[styles.confirmLeaveTitle, { color: colors.red }]}>Delete this room?</Text>
+                <Text style={[styles.confirmLeaveSub, { color: palette.muted }]}>This will permanently remove the room for all members.</Text>
+                <View style={styles.confirmLeaveRow}>
+                  <TouchableOpacity
+                    style={[styles.confirmLeaveCancel, { borderColor: palette.glass.border }]}
+                    onPress={() => setConfirmDelete(false)}
+                  >
+                    <Text style={[styles.confirmLeaveCancelText, { color: palette.text }]}>{t('room.cancel')}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.confirmLeaveConfirm}
+                    onPress={() => {
+                      setConfirmDelete(false);
+                      setInfoVisible(false);
+                      deleteRoom(roomId);
+                      navigation.goBack();
+                    }}
+                  >
+                    <Text style={styles.confirmLeaveConfirmText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : confirmLeave ? (
               <View style={[styles.confirmLeaveBox, { backgroundColor: isDark ? 'rgba(239,68,68,0.12)' : '#fff0f0', borderColor: 'rgba(239,68,68,0.3)' }]}>
                 <Text style={[styles.confirmLeaveTitle, { color: colors.red }]}>{t('room.leaveThisRoom')}</Text>
                 <Text style={[styles.confirmLeaveSub, { color: palette.muted }]}>{t('room.leaveRoomSub')}</Text>
@@ -1922,12 +1947,22 @@ export default function RoomScreen({ navigation, route }) {
                 </View>
               </View>
             ) : (
-              <TouchableOpacity
-                style={[styles.leaveBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fff0f0' }]}
-                onPress={() => setConfirmLeave(true)}
-              >
-                <Text style={styles.leaveBtnText}>{t('room.leaveRoom')}</Text>
-              </TouchableOpacity>
+              <>
+                {activeRoom?.isMine && (
+                  <TouchableOpacity
+                    style={[styles.leaveBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.15)' : '#ffe4e4', marginBottom: 8 }]}
+                    onPress={() => setConfirmDelete(true)}
+                  >
+                    <Text style={styles.leaveBtnText}>Delete Room</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.leaveBtn, { backgroundColor: isDark ? 'rgba(239,68,68,0.1)' : '#fff0f0' }]}
+                  onPress={() => setConfirmLeave(true)}
+                >
+                  <Text style={styles.leaveBtnText}>{t('room.leaveRoom')}</Text>
+                </TouchableOpacity>
+              </>
             )}
 
             <View style={{ height: 40 }} />

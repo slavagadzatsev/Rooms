@@ -102,6 +102,7 @@ function mapRoom(row, currentUserId = null) {
       backendUserId: member.user_id,
       name: member.profiles?.name || 'Member',
       avatarUri: member.profiles?.avatar_url || null,
+      bio: member.profiles?.bio || null,
       role: member.role || 'Member',
       color: '#c9b6f8',
       textColor: '#3C3489',
@@ -121,7 +122,7 @@ function roomsWithMetadataQuery() {
       user_id,
       role,
       status,
-      profiles(name, avatar_url, banned)
+      profiles(name, avatar_url, bio, banned)
     )
   `);
 }
@@ -390,6 +391,18 @@ export async function pulseRoom(roomId) {
     revived: willRevive,
     expiresAt: nextExpiresAt,
   };
+}
+
+export async function deleteRoom(roomId, userId) {
+  assertSupabaseConfigured();
+  if (!userId) throw new Error('A user id is required to delete a room.');
+  const { error } = await supabase
+    .from('rooms')
+    .update({ hidden: true, updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+    .eq('created_by', userId);
+  if (error) throw error;
+  return { roomId };
 }
 
 export function subscribeToRoomUpdates(roomId, onChange) {

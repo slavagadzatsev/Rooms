@@ -103,7 +103,7 @@ function mapMessage(row, currentUserId, messageById = new Map()) {
     time: formatMessageTime(row.created_at),
     mine,
     reaction: reactionSummary(row.message_reactions || []),
-    status: mine ? 'sent' : undefined,
+    status: mine ? 'sent' : 'delivered',
     replyTo: replyRow ? {
       sender: replyMine ? 'Me' : replyRow.profiles?.name || 'Member',
       text: getReplyPreviewText(replyRow),
@@ -141,7 +141,7 @@ function mapSimpleMessage(row, currentUserId, profilesById = new Map(), attachme
     time: formatMessageTime(row.created_at),
     mine,
     reaction: reactionSummary(reactionsByMessageId.get(row.id) || []),
-    status: mine ? 'sent' : undefined,
+    status: mine ? 'sent' : 'delivered',
     replyTo: replyRow ? {
       sender: replyMine ? 'Me' : replyProfile?.name || 'Member',
       text: getReplyPreviewText(replyRow),

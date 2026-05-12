@@ -38,6 +38,7 @@ import {
   addRoomRole as addRemoteRoomRole,
   chooseRoomRole as chooseRemoteRoomRole,
   createRoom as createRemoteRoom,
+  deleteRoom as deleteRemoteRoom,
   fetchRoom as fetchRemoteRoom,
   fetchRecommendedRooms as fetchRemoteRooms,
   inviteUserToRoom as inviteRemoteUserToRoom,
@@ -592,9 +593,11 @@ export function AppProvider({ children }) {
 
   // Always persist rooms so checkedInToday and isSaved survive restarts.
   // mergeRoomLocalState() preserves these fields when Supabase data is loaded on startup.
+  // Debounced so rapid state changes (incoming messages, unread counts) don't flood AsyncStorage.
   useEffect(() => {
     if (!storageReady) return;
-    save(KEYS.rooms, rooms);
+    const timer = setTimeout(() => save(KEYS.rooms, rooms), 800);
+    return () => clearTimeout(timer);
   }, [rooms, storageReady]);
 
   useEffect(() => {
@@ -681,13 +684,18 @@ export function AppProvider({ children }) {
     };
   }, [backendUserId, storageReady]);
 
-  // Bug 5 fix: refresh rooms (+ member profiles) and followed users whenever the
-  // app comes back to the foreground. Uses refs to avoid stale closure values.
+  // Refresh rooms (+ member profiles) and followed users when app comes back to foreground.
+  // Uses refs to avoid stale closure values. 30-second cooldown prevents double-fetches on
+  // rapid foreground transitions (biometric prompt, notification tap, etc).
+  const lastForegroundRefetchRef = useRef(0);
   useEffect(() => {
     if (!storageReady) return undefined;
     const subscription = AppState.addEventListener('change', nextState => {
       const userId = backendUserIdRef.current;
       if (nextState !== 'active' || !userId || !getSupabaseStatus().configured) return;
+      const now = Date.now();
+      if (now - lastForegroundRefetchRef.current < 30000) return;
+      lastForegroundRefetchRef.current = now;
       fetchRemoteRooms({ profileInterests: profileTagsRef.current, userId, limit: 50 })
         .then(remoteRooms => {
           setRooms(prev => remoteRooms.map(remoteRoom =>
@@ -1301,6 +1309,16 @@ export function AppProvider({ children }) {
     }
   };
 
+  const deleteRoom = (roomId) => {
+    setRooms(prev => prev.filter(r => r.id !== roomId));
+    if (backendUserId && getSupabaseStatus().configured) {
+      const backendRoomId = getBackendRoomId(rooms, roomId);
+      if (backendRoomId) {
+        deleteRemoteRoom(backendRoomId, backendUserId).catch(() => {});
+      }
+    }
+  };
+
   const receiveMessage = (roomId, sender, color, textColor, text) => {
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const newMsg = {
@@ -1448,6 +1466,7 @@ export function AppProvider({ children }) {
     if (!backendRoomId) {
       for (let attempt = 0; attempt < 8; attempt++) {
         await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!backendUserIdRef.current) break; // user logged out during wait
         backendRoomId = getBackendRoomId(roomsRef.current, roomId);
         if (backendRoomId) break;
       }
@@ -1832,6 +1851,7 @@ export function AppProvider({ children }) {
     savedRooms,
     joinRoom,
     leaveRoom,
+    deleteRoom,
     updateProfile,
     updateProfileTags,
     updateNotificationPrefs,

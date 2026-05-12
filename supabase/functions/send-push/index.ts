@@ -143,18 +143,20 @@ async function handleNewMessage(
     ((prefs ?? []) as NotifPref[]).map(p => [p.user_id, p])
   );
 
-  // Detect mentioned users (by profile name)
-  const mentionedNames  = extractMentionedNames(text);
+  // Detect mentioned users (by profile name, case-insensitive)
+  const mentionedNames  = extractMentionedNames(text).map(n => n.toLowerCase());
   const mentionedIds    = new Set<string>();
 
   if (mentionedNames.length > 0) {
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, name')
-      .in('name', mentionedNames);
+      .in('id', memberIds);
 
     for (const profile of ((profiles ?? []) as { id: string; name: string }[])) {
-      if (memberIds.includes(profile.id)) mentionedIds.add(profile.id);
+      if (mentionedNames.includes((profile.name ?? '').toLowerCase())) {
+        mentionedIds.add(profile.id);
+      }
     }
   }
 

@@ -22,7 +22,7 @@ export default function ProfileScreen({ navigation }) {
   const [backendHealth, setBackendHealth] = useState(null);
   const [backendLoading, setBackendLoading] = useState(false);
   const {
-    logout, profile, profileTags, themeMode, setAppearance, myRooms, totalMessagesSent,
+    logout, profile, profileTags, themeMode, setAppearance, myRooms,
     connectionsCount, connections, toggleFollowMember, followedUserIds, notificationPrefs, updateNotificationPrefs,
     premiumSettings, updatePremiumSettings, blockedUserIds, unblockMember, rooms,
   } = useApp();
@@ -220,11 +220,10 @@ export default function ProfileScreen({ navigation }) {
             {[
               { label: t('profile.statsRooms'), value: myRooms.length.toString(), sheet: 'rooms' },
               { label: t('profile.connections'), value: connectionsCount.toString(), sheet: 'connections' },
-              { label: t('profile.messagesSent'), value: totalMessagesSent.toString() },
             ].map((stat, index) => (
               <TouchableOpacity
                 key={stat.label}
-                style={[styles.statItem, index < 2 && styles.statBorder, { borderRightColor: palette.glass.border }]}
+                style={[styles.statItem, index < 1 && styles.statBorder, { borderRightColor: palette.glass.border }]}
                 activeOpacity={stat.sheet ? 0.72 : 1}
                 onPress={() => stat.sheet && setDetailsSheet(stat.sheet)}
               >
